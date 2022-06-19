@@ -1300,6 +1300,7 @@ static int register_aggr_kprobe(struct kprobe *orig_p, struct kprobe *p)
 {
 	int ret = 0;
 	struct kprobe *ap = orig_p;
+	kprobe_post_handler_t old_post_handler = NULL;
 
 	cpus_read_lock();
 
@@ -1351,6 +1352,9 @@ static int register_aggr_kprobe(struct kprobe *orig_p, struct kprobe *p)
 
 	/* Copy the insn slot of 'p' to 'ap'. */
 	copy_kprobe(ap, p);
+
+	/* save the old post_handler */
+	old_post_handler = ap->post_handler;
 	ret = add_new_kprobe(ap, p);
 
 out:
@@ -1365,6 +1369,7 @@ out:
 			ret = arm_kprobe(ap);
 			if (ret) {
 				ap->flags |= KPROBE_FLAG_DISABLED;
+				ap->post_handler = old_post_handler;
 				list_del_rcu(&p->list);
 				synchronize_rcu();
 			}
