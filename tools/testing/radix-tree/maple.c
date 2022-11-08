@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * maple_tree.c: Userspace shim for maple tree test-suite
- * Copyright (c) 2018 Liam R. Howlett <Liam.Howlett@Oracle.com>
+ * maple_tree.c: Userspace testing for maple tree test-suite
+ * Copyright (c) 2018-2022 Oracle Corporation
+ * Author: Liam R. Howlett <Liam.Howlett@Oracle.com>
  *
  * Any tests that require internal knowledge of the tree or threads and other
  * difficult to handle in kernel tests.
@@ -13,7 +14,6 @@
 #include "test.h"
 #include <stdlib.h>
 #include <time.h>
-
 
 #define module_init(x)
 #define module_exit(x)

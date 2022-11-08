@@ -323,14 +323,19 @@ static inline void *mte_safe_root(const struct maple_enode *node)
 	return (void *)((unsigned long)node & ~MAPLE_ROOT_NODE);
 }
 
-static inline void mte_set_full(const struct maple_enode *node)
+static inline void *mte_set_full(const struct maple_enode *node)
 {
-	node = (void *)((unsigned long)node & ~MAPLE_ENODE_NULL);
+	return (void *)((unsigned long)node & ~MAPLE_ENODE_NULL);
 }
 
-static inline void mte_clear_full(const struct maple_enode *node)
+static inline void *mte_clear_full(const struct maple_enode *node)
 {
-	node = (void *)((unsigned long)node | MAPLE_ENODE_NULL);
+	return (void *)((unsigned long)node | MAPLE_ENODE_NULL);
+}
+
+static inline bool mte_has_null(const struct maple_enode *node)
+{
+	return (unsigned long)node & MAPLE_ENODE_NULL;
 }
 
 static inline bool ma_is_root(struct maple_node *node)
@@ -1351,6 +1356,7 @@ static inline struct maple_enode *mas_start(struct ma_state *mas)
 		root = mas_root(mas);
 		/* Tree with nodes */
 		if (likely(xa_is_node(root))) {
+			mas->depth = 1;
 			mas->node = mte_safe_root(root);
 			return NULL;
 		}
@@ -3602,8 +3608,7 @@ static inline int mas_commit_b_node(struct ma_wr_state *wr_mas,
 	node = mas_pop_node(wr_mas->mas);
 	node->parent = mas_mn(wr_mas->mas)->parent;
 	wr_mas->mas->node = mt_mk_node(node, b_type);
-	mab_mas_cp(b_node, 0, b_end, wr_mas->mas, true);
-
+	mab_mas_cp(b_node, 0, b_end, wr_mas->mas, false);
 	mas_replace(wr_mas->mas, false);
 reuse_node:
 	mas_update_gap(wr_mas->mas);
@@ -3727,7 +3732,6 @@ static bool mas_is_span_wr(struct ma_wr_state *wr_mas)
 
 static inline void mas_wr_walk_descend(struct ma_wr_state *wr_mas)
 {
-	wr_mas->mas->depth++;
 	wr_mas->type = mte_node_type(wr_mas->mas->node);
 	mas_wr_node_walk(wr_mas);
 	wr_mas->slots = ma_slots(wr_mas->node, wr_mas->type);
@@ -3739,6 +3743,7 @@ static inline void mas_wr_walk_traverse(struct ma_wr_state *wr_mas)
 	wr_mas->mas->min = wr_mas->r_min;
 	wr_mas->mas->node = wr_mas->content;
 	wr_mas->mas->offset = 0;
+	wr_mas->mas->depth++;
 }
 /*
  * mas_wr_walk() - Walk the tree for a write.
@@ -6057,7 +6062,7 @@ void *mas_find_rev(struct ma_state *mas, unsigned long min)
 	if (mas->index < min)
 		return NULL;
 
-	/* Retries on dead nodes handled by mas_next_entry */
+	/* Retries on dead nodes handled by mas_prev_entry */
 	return mas_prev_entry(mas, min);
 }
 EXPORT_SYMBOL_GPL(mas_find_rev);
