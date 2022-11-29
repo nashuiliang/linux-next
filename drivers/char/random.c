@@ -1239,7 +1239,7 @@ struct entropy_timer_state {
  * Each time the timer fires, we expect that we got an unpredictable
  * jump in the cycle counter. Even if the timer is running on another
  * CPU, the timer activity will be touching the stack of the CPU that is
- * generating entropy..
+ * generating entropy.
  *
  * Note that we don't re-arm the timer in the timer itself - we are
  * happy to be scheduled away, since that just makes the load more
